@@ -3,58 +3,60 @@ from openai import OpenAI
 from openai.types.beta.assistant_stream_event import ThreadMessageDelta
 from openai.types.beta.threads.text_delta_block import TextDeltaBlock
 
+# Load API keys and assistant ID from Streamlit secrets
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 ASSISTANT_ID = st.secrets["ASSISTANT_ID"]
 
-# Initialise the OpenAI client, and retrieve the assistant
+# Initialise the OpenAI client and retrieve the assistant
 client = OpenAI(api_key=OPENAI_API_KEY)
 assistant = client.beta.assistants.retrieve(assistant_id=ASSISTANT_ID)
 
-# Initialise session state to store conversation history and run state
+# Initialise session state to store conversation history and track run state
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "run_active" not in st.session_state:
     st.session_state.run_active = False
 
-# Title
-st.title("MA publications chatbot")
+# Page title and introduction
+st.title("Dr. Andreeff's Lab Publications Assistant")
+st.write("Welcome! Ask me any question about Dr. Andreeff's publications and I'll try to help.")
 
-# Display messages in chat history
+# Display chat history
 for message in st.session_state.chat_history:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Textbox and streaming process
-user_query = st.chat_input("Ask me a question", key="query_input")
+# Text input for user queries
+user_query = st.chat_input("Ask me a question about the publications:", key="query_input")
 
 if user_query:
     if st.session_state.run_active:
-        # Display a message to the user indicating that the assistant is still processing
-        st.warning("The assistant is still processing your previous question. Please wait.")
+        # Notify user if the assistant is still processing a previous query
+        st.warning("The assistant is currently processing your previous question. Please wait.")
     else:
-        # Update state to indicate a run is active
+        # Indicate that a processing run has started
         st.session_state.run_active = True
 
-        # Create a new thread if it does not exist
+        # Create a new chat thread if it doesn't already exist
         if "thread_id" not in st.session_state:
             thread = client.beta.threads.create()
             st.session_state.thread_id = thread.id
 
-        # Display the user's query
+        # Display user query in chat history
         with st.chat_message("user"):
             st.markdown(user_query)
 
-        # Store the user's query into the history
+        # Log user query to the history
         st.session_state.chat_history.append({"role": "user", "content": user_query})
 
-        # Add user query to the thread
+        # Submit user query to the thread
         client.beta.threads.messages.create(
             thread_id=st.session_state.thread_id,
             role="user",
             content=user_query
         )
 
-        # Stream the assistant's reply
+        # Handle streaming of assistant responses
         with st.chat_message("assistant"):
             stream = client.beta.threads.runs.create(
                 thread_id=st.session_state.thread_id,
@@ -62,19 +64,16 @@ if user_query:
                 stream=True
             )
 
-            # Empty container to display the assistant's reply
+            # Initialize an empty container for the assistant's responses
             assistant_reply_box = st.empty()
-
-            # A blank string to store the assistant's reply
             assistant_reply = ""
 
-            # Iterate through the stream 
+            # Iterate through the streaming events
             for event in stream:
                 if isinstance(event, ThreadMessageDelta):
-                    # Process text delta blocks
                     assistant_reply += event.data.delta.content[0].text.value
                     assistant_reply_box.markdown(assistant_reply)
 
-            # Once the stream is over, update chat history and reset run_active state
+            # Update chat history and reset run state after completion
             st.session_state.chat_history.append({"role": "assistant", "content": assistant_reply})
             st.session_state.run_active = False
