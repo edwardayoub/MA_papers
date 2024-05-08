@@ -18,7 +18,7 @@ if "run_active" not in st.session_state:
     st.session_state.run_active = False
 
 # Page title and introduction
-st.title("Andreeff's Lab Publications Assistant")
+st.title("MHT Publications Assistant")
 st.write("Welcome! Ask me any question about Dr. Andreeff's Lab publications and I'll try to help.")
 
 # Display chat history
