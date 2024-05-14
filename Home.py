@@ -21,11 +21,10 @@ with st.sidebar:
         """
         ### How to Use
         - Ask questions about Dr. Andreeff's Lab publications using the input box below.
-        - The assistant will provide responses based on the available data.
+        - The assistant will provide responses based on the available data from PubMed.
 
-        ### Disclaimers
+        ### Disclaimer
         - The AI might make mistakes; always verify the information provided.
-        - The responses are generated based on the input data and may not be comprehensive.
         """,
         unsafe_allow_html=True,
     )
