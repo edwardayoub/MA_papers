@@ -16,7 +16,20 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "run_active" not in st.session_state:
     st.session_state.run_active = False
+with st.sidebar:
+    st.markdown(
+        """
+        ### How to Use
+        - Ask questions about Dr. Andreeff's Lab publications using the input box below.
+        - The assistant will provide responses based on the available data.
 
+        ### Disclaimers
+        - The AI might make mistakes; always verify the information provided.
+        - The responses are generated based on the input data and may not be comprehensive.
+        """,
+        unsafe_allow_html=True,
+    )
+    
 # Page title and introduction
 st.title("MHT Publications Assistant")
 st.write("Welcome! Ask me any question about Dr. Andreeff's Lab publications and I'll try to help.")
