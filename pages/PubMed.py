@@ -51,12 +51,10 @@ with st.sidebar:
         """
         ### How to Use
         - Enter relevant keywords in the search box to find articles.
-        - The search is sensitive to the keywords used, so try different variations for better results.
+        - The search is sensitive to the keywords used.
 
-        ### Disclaimers
+        ### Disclaimer
         - We are using the PubMed API to fetch articles.
-        - The AI might make mistakes; always verify the information provided.
-        - The responses are based on the input data and may not be comprehensive.
         """,
         unsafe_allow_html=True,
     )
