@@ -31,7 +31,6 @@ with st.sidebar:
     
 # Page title and introduction
 st.title("MHT Publications Assistant")
-st.write("Welcome! Ask me any question about Dr. Andreeff's Lab publications and I'll try to help.")
 
 # Display chat history
 for message in st.session_state.chat_history:
