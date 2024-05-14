@@ -46,6 +46,21 @@ def search_pubmed(query):
 # Streamlit application
 st.title("PubMed Article Search")
 
+with st.sidebar:
+    st.markdown(
+        """
+        ### How to Use
+        - Enter relevant keywords in the search box to find articles.
+        - The search is sensitive to the keywords used, so try different variations for better results.
+
+        ### Disclaimers
+        - We are using the PubMed API to fetch articles.
+        - The AI might make mistakes; always verify the information provided.
+        - The responses are based on the input data and may not be comprehensive.
+        """,
+        unsafe_allow_html=True,
+    )
+
 query = st.text_input("Enter search keywords:")
 
 if st.button("Search"):
