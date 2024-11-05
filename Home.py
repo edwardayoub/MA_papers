@@ -5,32 +5,51 @@ from openai.types.beta.threads.text_delta_block import TextDeltaBlock
 
 # Load API keys and assistant ID from Streamlit secrets
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-ASSISTANT_ID = st.secrets["ASSISTANT_ID"]
+ASSISTANT_ID_ASH = "asst_O5eLrcWgvxDTSWz1kJks3blQ"  # ASH 2024 abstracts
+ASSISTANT_ID_MHT = "asst_KTkXrKD646vjDo2W9IrzfnK3"  # MHT publications
 
-# Initialise the OpenAI client and retrieve the assistant
+# Initialize the OpenAI client
 client = OpenAI(api_key=OPENAI_API_KEY)
-assistant = client.beta.assistants.retrieve(assistant_id=ASSISTANT_ID)
 
-# Initialise session state to store conversation history and track run state
+# Initialize session state to store conversation history and track run state
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "run_active" not in st.session_state:
     st.session_state.run_active = False
+if "assistant_id" not in st.session_state:
+    st.session_state.assistant_id = ASSISTANT_ID_MHT  # Default to MHT publications
+
+# Sidebar for user instructions and assistant selection
 with st.sidebar:
     st.markdown(
         """
         ### How to Use
-        - Ask questions about Dr. Andreeff's Lab publications using the input box below.
-        - The assistant will provide responses based on the available data from PubMed.
-
+        - Choose an assistant to interact with from the dropdown menu.
+        - **ASH 2024 Abstracts**: Ask questions about upcoming ASH 2024 conference abstracts.
+        - **MHT Publications**: Ask questions about Dr. Andreeff's Lab publications.
+        - The assistant will provide responses based on the selected data source.
+        
         ### Disclaimer
         - The AI might make mistakes; always verify the information provided.
         """,
         unsafe_allow_html=True,
     )
-    
+
+    # Dropdown for selecting the assistant
+    assistant_choice = st.selectbox(
+        "Select an Assistant",
+        ("ASH 2024 Abstracts", "MHT Publications"),
+        index=1
+    )
+
+    # Set assistant ID based on user choice
+    if assistant_choice == "ASH 2024 Abstracts":
+        st.session_state.assistant_id = ASSISTANT_ID_ASH
+    else:
+        st.session_state.assistant_id = ASSISTANT_ID_MHT
+
 # Page title and introduction
-st.title("MHT Publications Assistant")
+st.title(f"{assistant_choice} Assistant")
 
 # Display chat history
 for message in st.session_state.chat_history:
@@ -38,7 +57,7 @@ for message in st.session_state.chat_history:
         st.markdown(message["content"])
 
 # Text input for user queries
-user_query = st.chat_input("Ask me a question about the publications:", key="query_input")
+user_query = st.chat_input("Ask me a question:", key="query_input")
 
 if user_query:
     if st.session_state.run_active:
@@ -71,7 +90,7 @@ if user_query:
         with st.chat_message("assistant"):
             stream = client.beta.threads.runs.create(
                 thread_id=st.session_state.thread_id,
-                assistant_id=ASSISTANT_ID,
+                assistant_id=st.session_state.assistant_id,  # Use selected assistant ID
                 stream=True
             )
 
