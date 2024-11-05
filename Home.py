@@ -39,7 +39,7 @@ with st.sidebar:
     assistant_choice = st.selectbox(
         "Select an Assistant",
         ("ASH 2024 Abstracts", "MHT Publications"),
-        index=1
+        index=0
     )
 
     # Set assistant ID based on user choice
