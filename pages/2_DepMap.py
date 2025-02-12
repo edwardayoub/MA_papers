@@ -4,6 +4,7 @@ import plotly.express as px
 import scipy.stats as stats
 import numpy as np
 
+# st.set_page_config(layout="wide")
 # --- Data Loading ---
 @st.cache_data
 def load_data(csv_path="Depmap_AML_subset.csv"):
@@ -28,8 +29,8 @@ def main():
     st.title("AML DepMap Explorer")
 
     st.markdown("""
-    **Gene Scores from DepMap:** This app explores gene scores from the DepMap project, focusing on AML (Acute Myeloid Leukemia) cell lines. 
-    Gene scores, in this context, represent the **dependency** of cancer cells on specific genes. 
+    **Gene Scores from DepMap:** This app explores gene scores from the DepMap project, focusing on AML (Acute Myeloid Leukemia) cell lines.
+    Gene scores, in this context, represent the **dependency** of cancer cells on specific genes.
     Lower scores (more negative) generally indicate that a gene is more essential for cell survival.
     """)
 
@@ -147,7 +148,7 @@ def main():
         x_title_base = selected_mut_display
 
     if binary_option:
-        df["binary_mutation_col"] = df[x_col].astype(bool) # More concise binary conversion
+        df["binary_mutation_col"] = df[x_col].astype(bool).astype(int) # Convert bool to int (0/1)
         x_col = "binary_mutation_col"
         x_title = f"{x_title_base} (Binary)"
     else:
@@ -158,30 +159,88 @@ def main():
     plot_cols = st.columns(num_cols) if num_cols > 1 else [st.columns(1)[0]] # Handle single or double column layout
     col_index = 0 # Index to track column for plotting
 
+    jitter_factor = 0.2  # Adjust as needed for jitter intensity
+
     if selected_score_col_rnai:
         with plot_cols[col_index]:
             col_index += 1 # Increment for next plot
             st.subheader(f"RNAi Scores for {selected_score_gene}")
-            fig_rnai = px.box(
-                df, x=x_col, y=selected_score_col_rnai,
-                color=x_col if binary_option else None,
-                color_discrete_sequence=px.colors.qualitative.Set1 if binary_option else None,
-                labels={x_col: x_title, selected_score_col_rnai: "RNAi Score"}
+
+            # Jitter for x-axis
+            df['jittered_x'] = df[x_col] + np.random.rand(len(df)) * jitter_factor - jitter_factor / 2
+            # add a column for size with 1 for all
+            x_plot_col = 'jittered_x'
+
+            fig_rnai = px.scatter(
+                df,
+                x=x_plot_col,
+                y=selected_score_col_rnai,
+                color=x_col, # Color by mutation count (or binary if selected)
+                hover_name='cell_line_display_name',
+                labels={x_plot_col: x_title, selected_score_col_rnai: "RNAi Score", x_col: "Mutation Count" if not binary_option else "Mutation"},
+                color_continuous_scale=px.colors.sequential.Viridis if not binary_option else px.colors.qualitative.Set1, # Choose color scale
+                opacity=1,
+                size_max=20,
+                trendline="ols" # Add correlation line here
             )
-            fig_rnai.update_layout(showlegend=False)
+            fig_rnai.update_layout(showlegend=False, coloraxis_showscale=False)
+
+            # Calculate correlation and p-value
+            df_rnai_clean = df[[x_col, selected_score_col_rnai]].dropna()
+            correlation_rnai, p_value_rnai = stats.pearsonr(df_rnai_clean[x_col], df_rnai_clean[selected_score_col_rnai])
+            annotation_text_rnai = f"Corr: {correlation_rnai:.2f}, P-val: {p_value_rnai:.3f}"
+
+            fig_rnai.add_annotation(
+                x=0.5, y=1.1,  # Adjust position as needed
+                xanchor='center', yanchor='top',
+                text=annotation_text_rnai,
+                showarrow=False,
+                xref='paper', yref='paper'
+            )
+
             st.plotly_chart(fig_rnai, use_container_width=True)
+            del df['jittered_x'] # clean up jittered column
+
 
     if selected_score_col_crispr:
         with plot_cols[col_index]: # Use the incremented index
             st.subheader(f"CRISPR Scores for {selected_score_gene}")
-            fig_crispr = px.box(
-                df, x=x_col, y=selected_score_col_crispr,
-                color=x_col if binary_option else None,
-                color_discrete_sequence=px.colors.qualitative.Set1 if binary_option else None,
-                labels={x_col: x_title, selected_score_col_crispr: "CRISPR Score"}
+
+            # Jitter for x-axis
+            df['jittered_x'] = df[x_col] + np.random.rand(len(df)) * jitter_factor - jitter_factor / 2
+            x_plot_col = 'jittered_x'
+
+            fig_crispr = px.scatter(
+                df,
+                x=x_plot_col,
+                y=selected_score_col_crispr,
+                color=x_col, # Color by mutation count (or binary if selected)
+                hover_name='cell_line_display_name',
+                labels={x_plot_col: x_title, selected_score_col_crispr: "CRISPR Score", x_col: "Mutation Count" if not binary_option else "Mutation"},
+                color_continuous_scale=px.colors.sequential.Viridis if not binary_option else px.colors.qualitative.Set1, # Choose color scale
+                opacity=1,
+                size_max=20,
+                trendline="ols" # Add correlation line here
             )
-            fig_crispr.update_layout(showlegend=False)
+            fig_crispr.update_layout(showlegend=False, coloraxis_showscale=False)
+
+            # Calculate correlation and p-value
+            df_crispr_clean = df[[x_col, selected_score_col_crispr]].dropna()
+            correlation_crispr, p_value_crispr = stats.pearsonr(df_crispr_clean[x_col], df_crispr_clean[selected_score_col_crispr])
+            annotation_text_crispr = f"Corr: {correlation_crispr:.2f}, P-val: {p_value_crispr:.3f}"
+
+            fig_crispr.add_annotation(
+                x=0.5, y=1.1,  # Adjust position as needed
+                xanchor='center', yanchor='top',
+                text=annotation_text_crispr,
+                showarrow=False,
+                xref='paper', yref='paper'
+            )
+
+
             st.plotly_chart(fig_crispr, use_container_width=True)
+            del df['jittered_x'] # clean up jittered column
+
 
     # --- Filtered Data Display ---
     with st.expander("Show Filtered Data"):
