@@ -48,6 +48,7 @@ def main():
     mutation_type = st.sidebar.selectbox(
         "Select Mutation Type",
         ["Hotspot Mutations", "Damaging Mutations", "Both"],
+        index = 2,
         help="""
         **Mutation Type:** Choose the type of mutations to analyze.
         - **Hotspot Mutations:** Mutations frequently found in cancer.
