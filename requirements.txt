@@ -3,3 +3,4 @@ streamlit
 Bio
 plotly
 scipy
+statsmodels
