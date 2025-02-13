@@ -7,7 +7,7 @@ import numpy as np
 # st.set_page_config(layout="wide")
 # --- Data Loading ---
 @st.cache_data
-def load_data(csv_path="data/Depmap_AML_subset.csv"): # You might need to update the CSV path if your CNV data is in a different file
+def load_data(csv_path="Depmap_AML_subset.csv"): # You might need to update the CSV path if your CNV data is in a different file
     return pd.read_csv(csv_path)
 
 # --- Prefix Stripping Utility ---
