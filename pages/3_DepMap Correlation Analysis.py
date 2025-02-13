@@ -106,6 +106,18 @@ def main():
         help="Maximum number of NA values allowed for CRISPR score. Genes exceeding this will be skipped in CRISPR analysis."
     )
 
+    # --- P-value cutoff control ---
+    p_value_cutoff = st.sidebar.number_input(
+        "P-value cutoff",
+        min_value=0.001,
+        max_value=0.1,
+        value=0.05,
+        step=0.005,
+        format="%.3f", # remove format argument here
+        help="P-value cutoff for significance."
+    )
+
+
     submit_button = st.sidebar.button("Submit")
 
     raw_score_cols_rnai = [col for col in df.columns if col.startswith("RNAi")]
@@ -202,19 +214,50 @@ def main():
 
         ranking_df = pd.DataFrame(ranking_data)
 
+        ranking_df['RNAi Significant'] = (ranking_df['RNAi P-value'] < p_value_cutoff) & (ranking_df['RNAi P-value'].notna())
+        ranking_df['CRISPR Significant'] = (ranking_df['CRISPR P-value'] < p_value_cutoff) & (ranking_df['CRISPR P-value'].notna())
+
+        def check_same_direction(row):
+            if row['RNAi Significant'] and row['CRISPR Significant']:
+                if not pd.isna(row['RNAi Correlation']) and not pd.isna(row['CRISPR Correlation']):
+                    return np.sign(row['RNAi Correlation']) == np.sign(row['CRISPR Correlation'])
+            return False
+
+        ranking_df['Same Direction'] = ranking_df.apply(check_same_direction, axis=1)
+
+        def determine_direction(row):
+            if row['Same Direction']:
+                if not pd.isna(row['RNAi Correlation']): # Use RNAi as primary direction indicator when available
+                    if row['RNAi Correlation'] > 0:
+                        return "Positive"
+                    elif row['RNAi Correlation'] < 0:
+                        return "Negative"
+                elif not pd.isna(row['CRISPR Correlation']): # Fallback to CRISPR if RNAi is NaN but CRISPR is not, though Same Direction should imply they exist if significant
+                     if row['CRISPR Correlation'] > 0:
+                        return "Positive"
+                     elif row['CRISPR Correlation'] < 0:
+                        return "Negative"
+            return "Mixed/None"
+
+        ranking_df['Direction'] = ranking_df.apply(determine_direction, axis=1)
+
+
         # Rank by RNAi Correlation, then CRISPR if RNAi is NaN
         ranking_df['RNAi Rank'] = ranking_df['RNAi Correlation'].rank(ascending=False, na_option='bottom').astype(int)
         ranking_df['CRISPR Rank'] = ranking_df['CRISPR Correlation'].rank(ascending=False, na_option='bottom').astype(int)
-        ranking_df['Combined Rank'] = np.where(ranking_df['RNAi Rank'].isna(), ranking_df['CRISPR Rank'], ranking_df['RNAi Rank']) # prioritize RNAi rank
+        # ranking_df['Combined Rank'] = np.where(ranking_df['RNAi Rank'].isna(), ranking_df['CRISPR Rank'], ranking_df['RNAi Rank']) # prioritize RNAi rank # REMOVE combined rank
 
-
-        ranked_df = ranking_df.sort_values(by='Combined Rank', ascending=True) # sort by combined rank
+        ranked_df = ranking_df.sort_values(by='RNAi Rank', ascending=True) # sort by RNAi Rank # Modified to sort by RNAi Rank as Combined Rank is removed
 
         st.dataframe(ranked_df, column_config={ # improve display and formatting
             "RNAi Correlation": st.column_config.NumberColumn(format="%.2f"),
             "RNAi P-value": st.column_config.NumberColumn(format="%.3f"),
             "CRISPR Correlation": st.column_config.NumberColumn(format="%.2f"),
             "CRISPR P-value": st.column_config.NumberColumn(format="%.3f"),
+            "RNAi Significant": st.column_config.CheckboxColumn(),
+            "CRISPR Significant": st.column_config.CheckboxColumn(),
+            "Same Direction": st.column_config.CheckboxColumn(),
+            "Direction": st.column_config.TextColumn(), # ADD direction column config
         }, use_container_width=True)
 
 
