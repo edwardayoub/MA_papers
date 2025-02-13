@@ -13,8 +13,8 @@ def load_data(csv_path="Depmap_AML_subset.csv"):
 # --- Prefix Stripping Utility ---
 def strip_prefix(col_name: str):
     prefixes = [
-        "Hotspot Mutations: ", "Damaging Mutations: ",
-        "Hotspot Mutations", "Damaging Mutations",
+        "Hotspot Mutations: ", "Damaging Mutations: ", "CN Gene Public 24Q4: ", # ADDED CNV prefix
+        "Hotspot Mutations", "Damaging Mutations", "Omics Absolute CN Gene Public 24Q4 ", # ADDED CNV prefix (without colon and space, for completeness)
         "RNAi: ", "CRISPR: ",
         "RNAi (Achilles+DRIVE+Marcotte, DEMETER2) ",
         "CRISPR (DepMap Public 24Q4+Score, Chronos)"
@@ -48,42 +48,58 @@ def main():
 
     mutation_type = st.sidebar.selectbox(
         "Select Mutation Type",
-        ["Hotspot Mutations", "Damaging Mutations", "Both"],
-        index = 2,
+        ["Hotspot Mutations", "Damaging Mutations", "CNV Data", "All"], # UPDATED dropdown options
+        index = 3, # UPDATED index to default to "All"
         help="""
-        **Mutation Type:** Choose the type of mutations to analyze.
+        **Mutation Type:** Choose the type of mutations or genomic alteration to analyze.
         - **Hotspot Mutations:** Mutations frequently found in cancer.
         - **Damaging Mutations:** Mutations predicted to disrupt gene function.
-        - **Both:** Analyze both Hotspot and Damaging mutations.
+        - **CNV Data:** Copy Number Variation data from Omics Absolute CN Gene Public 24Q4.
+        - **All:** Analyze all mutation and CNV types.
         """
     )
 
 
     # --- Column Filtering and Dictionary Creation ---
-    if mutation_type != "Both":
-        raw_mutation_cols = [
-            col for col in df.columns if col.startswith(mutation_type)
-        ]
+    if mutation_type != "All": # UPDATED from "Both" to "All"
+        raw_mutation_cols = []
+        if mutation_type == "Hotspot Mutations":
+            raw_mutation_cols = [
+                col for col in df.columns if col.startswith(mutation_type)
+            ]
+        elif mutation_type == "Damaging Mutations":
+            raw_mutation_cols = [
+                col for col in df.columns if col.startswith(mutation_type)
+            ]
+        elif mutation_type == "CNV Data": # ADDED CNV Data condition
+            raw_mutation_cols = [
+                col for col in df.columns if col.startswith("Omics Absolute CN Gene Public 24Q4 ")
+            ]
+
         mutation_col_dict = {strip_prefix(c): c for c in raw_mutation_cols}
-    else: # mutation_type == "Both"
+    else: # mutation_type == "All" # UPDATED from "Both" to "All"
         raw_mutation_cols = [
             col for col in df.columns
-            if col.startswith("Hotspot Mutations") or col.startswith("Damaging Mutations")
+            if col.startswith("Hotspot Mutations") or
+               col.startswith("Damaging Mutations") or
+               col.startswith("Omics Absolute CN Gene Public 24Q4 ") # ADDED CNV Data
         ]
         mutation_col_dict = {}
         for col in raw_mutation_cols:
-            gene_name = strip_prefix(col).replace("Hotspot ", "").replace("Damaging ", "")
+            gene_name = strip_prefix(col).replace("Hotspot ", "").replace("Damaging ", "").replace("Omics Absolute CN Gene Public 24Q4  ", "") # UPDATED strip for CNV
             mutation_col_dict.setdefault(gene_name, {})
             if "Hotspot" in col:
                 mutation_col_dict[gene_name]['Hotspot'] = col
             elif "Damaging" in col:
                 mutation_col_dict[gene_name]['Damaging'] = col
+            elif "Omics Absolute CN Gene Public 24Q4 " in col: # ADDED CNV Data
+                mutation_col_dict[gene_name]['CNV'] = col # Using 'CNV' key
 
     raw_score_cols_rnai = [col for col in df.columns if col.startswith("RNAi")]
     raw_score_cols_crispr = [col for col in df.columns if col.startswith("CRISPR")]
 
     if not raw_mutation_cols:
-        st.warning("No columns found matching the selected Mutation Type.")
+        st.warning(f"No columns found matching the selected Mutation Type: {mutation_type}.") # UPDATED warning message
         return
     if not raw_score_cols_rnai and not raw_score_cols_crispr:
         st.warning("No RNAi or CRISPR score columns found.")
@@ -103,8 +119,8 @@ def main():
         "Select Score Gene", score_gene_options,
         help="""
         **Score Gene:** Choose the gene for which you want to examine the gene dependency scores (RNAi and CRISPR scores).
-        The app will then display how mutations in another gene (Mutation Gene selection below) relate to the dependency of this selected Score Gene.
-        """
+        The app will then display how mutations or CNV in another gene (Mutation Gene selection below) relate to the dependency of this selected Score Gene.
+        """ # Updated help text to include CNV
     )
 
     mutation_options = list(mutation_col_dict.keys())
@@ -112,8 +128,8 @@ def main():
     selected_mut_display = st.sidebar.selectbox(
         "Select Mutation Gene", mutation_options, index=default_mutation_index,
         help="""
-        **Mutation Gene:** Choose the gene for which you want to analyze mutations.
-        The app will show how mutations in this gene correlate with the gene dependency scores of the Score Gene selected above.
+        **Mutation Gene:** Choose the gene for which you want to analyze mutations or CNV. # Updated help text to include CNV
+        The app will show how mutations or CNV in this gene correlate with the gene dependency scores of the Score Gene selected above. # Updated help text to include CNV
         """
     )
 
@@ -126,26 +142,46 @@ def main():
 
     binary_option = st.sidebar.checkbox("Convert mutation column to binary", help="Convert mutation data into binary (Mutation Present/Absent) for simpler analysis.")
 
-    if mutation_type == "Both":
+    if mutation_type == "All": # UPDATED from "Both" to "All"
         hotspot_col = selected_mut_col.get('Hotspot')
         damaging_col = selected_mut_col.get('Damaging')
+        cnv_col = selected_mut_col.get('CNV') # ADDED CNV column
 
-        if hotspot_col and damaging_col:
+        if hotspot_col and damaging_col and cnv_col: # UPDATED condition to include CNV
+            df["combined_mutation_col"] = df[hotspot_col].fillna(0) + df[damaging_col].fillna(0) + df[cnv_col].fillna(0) # UPDATED combination to include CNV
+            x_col = "combined_mutation_col"
+            x_title_base = f"{selected_mut_display} (Hotspot + Damaging + CNV)" # UPDATED title to include CNV
+        elif hotspot_col and damaging_col:
             df["combined_mutation_col"] = df[hotspot_col].fillna(0) + df[damaging_col].fillna(0)
             x_col = "combined_mutation_col"
             x_title_base = f"{selected_mut_display} (Hotspot + Damaging)"
+        elif hotspot_col and cnv_col:
+            df["combined_mutation_col"] = df[hotspot_col].fillna(0) + df[cnv_col].fillna(0)
+            x_col = "combined_mutation_col"
+            x_title_base = f"{selected_mut_display} (Hotspot + CNV)"
+        elif damaging_col and cnv_col:
+            df["combined_mutation_col"] = df[damaging_col].fillna(0) + df[cnv_col].fillna(0)
+            x_col = "combined_mutation_col"
+            x_title_base = f"{selected_mut_display} (Damaging + CNV)"
         elif hotspot_col:
             x_col = hotspot_col
             x_title_base = f"{selected_mut_display} (Hotspot)"
         elif damaging_col:
             x_col = damaging_col
             x_title_base = f"{selected_mut_display} (Damaging)"
+        elif cnv_col: # ADDED CNV condition
+            x_col = cnv_col
+            x_title_base = f"{selected_mut_display} (CNV)"
         else:
-            st.error("No Hotspot or Damaging columns found for selected gene.")
+            st.error("No Hotspot, Damaging, or CNV columns found for selected gene.") # UPDATED error message to include CNV
             return
-    else:
+    elif mutation_type == "CNV Data": # ADDED CNV Data condition
+        x_col = selected_mut_col
+        x_title_base = selected_mut_display + " (CNV)" # Updated title for CNV
+    else: # Hotspot or Damaging Mutations
         x_col = selected_mut_col
         x_title_base = selected_mut_display
+
 
     if binary_option:
         df["binary_mutation_col"] = df[x_col].astype(bool).astype(int) # Convert bool to int (0/1)
@@ -177,7 +213,7 @@ def main():
                 y=selected_score_col_rnai,
                 color=x_col, # Color by mutation count (or binary if selected)
                 hover_name='cell_line_display_name',
-                labels={x_plot_col: x_title, selected_score_col_rnai: "RNAi Score", x_col: "Mutation Count" if not binary_option else "Mutation"},
+                labels={x_plot_col: x_title, selected_score_col_rnai: "RNAi Score", x_col: "Mutation Count" if not binary_option else "Mutation/CNV"}, # UPDATED label
                 color_continuous_scale=px.colors.sequential.Viridis if not binary_option else px.colors.qualitative.Set1, # Choose color scale
                 opacity=1,
                 size_max=20,
@@ -216,7 +252,7 @@ def main():
                 y=selected_score_col_crispr,
                 color=x_col, # Color by mutation count (or binary if selected)
                 hover_name='cell_line_display_name',
-                labels={x_plot_col: x_title, selected_score_col_crispr: "CRISPR Score", x_col: "Mutation Count" if not binary_option else "Mutation"},
+                labels={x_plot_col: x_title, selected_score_col_crispr: "CRISPR Score", x_col: "Mutation Count" if not binary_option else "Mutation/CNV"}, # UPDATED label
                 color_continuous_scale=px.colors.sequential.Viridis if not binary_option else px.colors.qualitative.Set1, # Choose color scale
                 opacity=1,
                 size_max=20,
@@ -249,14 +285,18 @@ def main():
         score_cols = []
 
         # Add mutation columns based on mutation_type and binary_option
-        if mutation_type == "Both":
+        if mutation_type == "All": # UPDATED from "Both" to "All"
             if 'Hotspot' in selected_mut_col:
                 mutation_cols.append(selected_mut_col['Hotspot'])
             if 'Damaging' in selected_mut_col:
                 mutation_cols.append(selected_mut_col['Damaging'])
+            if 'CNV' in selected_mut_col: # ADDED CNV column
+                mutation_cols.append(selected_mut_col['CNV'])
             if 'combined_mutation_col' in df.columns:
                 mutation_cols.append("combined_mutation_col")
-        else:
+        elif mutation_type == "CNV Data": # ADDED CNV Data condition
+            mutation_cols.append(x_col) # x_col is already set to the correct CNV column
+        else: # Hotspot or Damaging Mutations
             mutation_cols.append(x_col) # x_col is already set to the correct mutation column
 
         if binary_option and 'binary_mutation_col' in df.columns: # Only add if binary option is checked and column exists
