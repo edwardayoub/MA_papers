@@ -4,3 +4,4 @@ Bio
 plotly
 scipy
 statsmodels
+matplotlib
