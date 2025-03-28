@@ -47,7 +47,7 @@ with st.sidebar:
     # Set assistant ID based on user choice
     if assistant_choice == "MDACC 2025 Hackathon":
         st.session_state.assistant_id = ASSISTANT_ID_HACKATHON
-    if: assistant_choice == "ASH 2024 Abstracts":
+    elif assistant_choice == "ASH 2024 Abstracts":
         st.session_state.assistant_id = ASSISTANT_ID_ASH
     else:
         st.session_state.assistant_id = ASSISTANT_ID_MHT
