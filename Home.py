@@ -7,6 +7,7 @@ from openai.types.beta.threads.text_delta_block import TextDeltaBlock
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 ASSISTANT_ID_ASH = "asst_O5eLrcWgvxDTSWz1kJks3blQ"  # ASH 2024 abstracts
 ASSISTANT_ID_MHT = "asst_KTkXrKD646vjDo2W9IrzfnK3"  # MHT publications
+ASSISTANT_ID_HACKATHON = "asst_pFOiqiKqq0xombtZJLKQpXJ4"  # Hackathon
 
 # Initialize the OpenAI client
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -17,7 +18,7 @@ if "chat_history" not in st.session_state:
 if "run_active" not in st.session_state:
     st.session_state.run_active = False
 if "assistant_id" not in st.session_state:
-    st.session_state.assistant_id = ASSISTANT_ID_MHT  # Default to MHT publications
+    st.session_state.assistant_id = ASSISTANT_ID_HACKATHON  # Default to MHT publications
 
 # Sidebar for user instructions and assistant selection
 with st.sidebar:
@@ -25,7 +26,8 @@ with st.sidebar:
         """
         ### How to Use
         - Choose an assistant to interact with from the dropdown menu.
-        - **ASH 2024 Abstracts**: Ask questions about upcoming ASH 2024 conference abstracts.
+        - **MDACC 2025 Hackathon**: Ask questions about Hackathon papers and jupyter notebook.
+        - **ASH 2024 Abstracts**: Ask questions about ASH 2024 conference abstracts.
         - **MHT Publications**: Ask questions about Dr. Andreeff's Lab publications.
         - The assistant will provide responses based on the selected data source.
         
@@ -38,12 +40,14 @@ with st.sidebar:
     # Dropdown for selecting the assistant
     assistant_choice = st.selectbox(
         "Select an Assistant",
-        ("ASH 2024 Abstracts", "MHT Publications"),
+        ("MDACC 2025 Hackathon", "ASH 2024 Abstracts", "MHT Publications"),
         index=0
     )
 
     # Set assistant ID based on user choice
-    if assistant_choice == "ASH 2024 Abstracts":
+    if assistant_choice == "MDACC 2025 Hackathon":
+        st.session_state.assistant_id = ASSISTANT_ID_HACKATHON
+    if: assistant_choice == "ASH 2024 Abstracts":
         st.session_state.assistant_id = ASSISTANT_ID_ASH
     else:
         st.session_state.assistant_id = ASSISTANT_ID_MHT
