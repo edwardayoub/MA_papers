@@ -27,8 +27,6 @@ with st.sidebar:
         ### How to Use
         - Choose an assistant to interact with from the dropdown menu.
         - **MDACC 2025 Hackathon**: Ask questions about Hackathon papers and jupyter notebook.
-        - **ASH 2024 Abstracts**: Ask questions about ASH 2024 conference abstracts.
-        - **MHT Publications**: Ask questions about Dr. Andreeff's Lab publications.
         - The assistant will provide responses based on the selected data source.
         
         ### Disclaimer
@@ -36,11 +34,13 @@ with st.sidebar:
         """,
         unsafe_allow_html=True,
     )
+    # - **ASH 2024 Abstracts**: Ask questions about ASH 2024 conference abstracts.
+    # - **MHT Publications**: Ask questions about Dr. Andreeff's Lab publications.
 
     # Dropdown for selecting the assistant
     assistant_choice = st.selectbox(
         "Select an Assistant",
-        ("MDACC 2025 Hackathon", "ASH 2024 Abstracts", "MHT Publications"),
+        ("MDACC 2025 Hackathon"), #  "ASH 2024 Abstracts", "MHT Publications"
         index=0
     )
 
