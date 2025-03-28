@@ -25,7 +25,6 @@ with st.sidebar:
     st.markdown(
         """
         ### How to Use
-        - Choose an assistant to interact with from the dropdown menu.
         - **MDACC 2025 Hackathon**: Ask questions about Hackathon papers and jupyter notebook.
         - The assistant will provide responses based on the selected data source.
         
@@ -34,6 +33,8 @@ with st.sidebar:
         """,
         unsafe_allow_html=True,
     )
+    # - Choose an assistant to interact with from the dropdown menu.
+
     # - **ASH 2024 Abstracts**: Ask questions about ASH 2024 conference abstracts.
     # - **MHT Publications**: Ask questions about Dr. Andreeff's Lab publications.
 
