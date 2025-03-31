@@ -2,7 +2,14 @@ import streamlit as st
 from openai import OpenAI
 from openai.types.beta.assistant_stream_event import ThreadMessageDelta
 from openai.types.beta.threads.text_delta_block import TextDeltaBlock
-st.set_page_config(page_title="Hide Buttons Example", layout="wide")
+hide_buttons_css = """
+<style>
+#MainMenu {visibility: hidden;} /* Hides the hamburger menu */
+footer {visibility: hidden;} /* Hides the footer */
+button[title="Rerun"], button[title="Stop"] {display: none;} /* Hides Rerun and Stop buttons */
+</style>
+"""
+st.markdown(hide_buttons_css, unsafe_allow_html=True)
 
 # Load API keys and assistant ID from Streamlit secrets
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
