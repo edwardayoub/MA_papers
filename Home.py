@@ -2,6 +2,7 @@ import streamlit as st
 from openai import OpenAI
 from openai.types.beta.assistant_stream_event import ThreadMessageDelta
 from openai.types.beta.threads.text_delta_block import TextDeltaBlock
+st.set_page_config(page_title="Hide Buttons Example", layout="wide")
 
 # Load API keys and assistant ID from Streamlit secrets
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
