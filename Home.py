@@ -52,7 +52,7 @@ with st.sidebar:
     # Dropdown for selecting the assistant
     assistant_choice = st.selectbox(
         "Select an Assistant",
-        ("MDACC 2025 Hackathon"), #  "ASH 2024 Abstracts", "MHT Publications"
+        ("ASH 2024 Abstracts", "MHT Publications"), # "MDACC 2025 Hackathon"
         index=0
     )
 
