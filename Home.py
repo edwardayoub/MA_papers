@@ -48,6 +48,11 @@ with st.sidebar:
         """,
         unsafe_allow_html=True,
     )
+    assistant_choice = st.selectbox(
+        "Select an Assistant",
+        ("ASH 2024 Abstracts", "MHT Publications"), # "MDACC 2025 Hackathon"
+        index=0
+    )
 
     # Set assistant ID based on user choice
     if assistant_choice == "MDACC 2025 Hackathon":
