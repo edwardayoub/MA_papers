@@ -36,24 +36,17 @@ with st.sidebar:
     st.markdown(
         """
         ### How to Use
-        - **MDACC 2025 Hackathon**: Ask questions about Hackathon papers and jupyter notebook.
-        - The assistant will provide responses based on the selected data source.
+        - **ASH 2024 Abstracts**: Ask about research presented at the ASH 2024 conference.
+        - **MHT Publications**: Explore insights from Dr. Andreeff's Lab and related publications.
+        - Use the dropdown menu below to select the assistant you'd like to interact with.
+        - Type your question in the chat input and wait for a response.
+        - You can reset the conversation at any time using the **Reset Chat** button.
 
         ### Disclaimer
-        - The AI might make mistakes; always verify the information provided.
+        - The assistant may occasionally generate incorrect or outdated information.
+        - Always double-check responses, especially for clinical or research use.
         """,
         unsafe_allow_html=True,
-    )
-    # - Choose an assistant to interact with from the dropdown menu.
-
-    # - **ASH 2024 Abstracts**: Ask questions about ASH 2024 conference abstracts.
-    # - **MHT Publications**: Ask questions about Dr. Andreeff's Lab publications.
-
-    # Dropdown for selecting the assistant
-    assistant_choice = st.selectbox(
-        "Select an Assistant",
-        ("ASH 2024 Abstracts", "MHT Publications"), # "MDACC 2025 Hackathon"
-        index=0
     )
 
     # Set assistant ID based on user choice
